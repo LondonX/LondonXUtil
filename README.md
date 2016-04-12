@@ -1,6 +1,10 @@
 # Lutil
 Tool box of android
 
+### Usage
+1. import as module in you project
+2. call `Lutil.init(Context)` in your app application
+
 ## Important classes
 * Lutil
 * ConnectionChecker
@@ -12,11 +16,11 @@ Tool box of android
 
 ## Lutil
 Main entry of Lutil tool box.  
-### Usage
-`Lutil.init(Context);`
 
-* You should call `Lutil.init(Context);` in your app `Application` before every thing.  
-* It will do `ToastUtil.init(Context);` and `PermissionUtil.init(Context);` for you.
+### Usage
+* call `Lutil.init(Context)` in your app application
+
+* You should call `Lutil.init(Context)` in your app `Application` before every thing. It will do `ToastUtil.init(Context)` and `PermissionUtil.init(Context)` for you.
 
 ## ConnectionChecker
 ### Usage
