@@ -12,6 +12,7 @@ import java.io.File;
 public class LResponse extends LEntity {
     public int requestCode;
     public int responseCode;
+    public String url;
     @NonNull
     public String body = "";
     @Nullable

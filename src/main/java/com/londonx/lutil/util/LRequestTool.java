@@ -10,11 +10,14 @@ import com.londonx.lutil.entity.LResponse;
 import com.londonx.lutil.impl.DefaultGlobalResponseListener;
 import com.londonx.lutil.impl.GlobalResponseListener;
 import com.londonx.lutil.impl.OnResponseListener;
-import com.londonx.lutil.struct.DefaultParams;
+
+import org.json.JSONObject;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
 
+import okhttp3.FormBody;
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
@@ -34,6 +37,7 @@ import okhttp3.Response;
  * Update in 2015-11-03 19:12:51 add onUploadListener
  * Update in 2016-03-11 18:14:42 add doPostRaw for json posting
  * Update in 2016-04-07 10:55:18 fully refactor by using OkHttp
+ * Update in 2016-07-14 17:40:32 add doGetWithHeader,doPostWithHeader,doPostMultipart methods
  */
 public class LRequestTool implements Handler.Callback {
     public static final MediaType FORM_URLENCODED
@@ -42,7 +46,7 @@ public class LRequestTool implements Handler.Callback {
             = MediaType.parse("image/png; charset=utf-8");
     public static final MediaType IMAGE_JPG
             = MediaType.parse("image/jpg; charset=utf-8");
-    public static final MediaType JSON
+    public static final MediaType APPLICATION_JSON
             = MediaType.parse("application/json; charset=utf-8");
 
     private static final int whatNoResponse = 0;
@@ -102,59 +106,10 @@ public class LRequestTool implements Handler.Callback {
         return false;
     }
 
-    public void doGet(@NonNull final String url,
-                      @Nullable final DefaultParams params,
-                      final int requestCode) {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                Request request = new Request.Builder()
-                        .url(url + hashMapToGetParams(params))
-                        .build();
-                try {
-                    Response response = CLIENT.newCall(request).execute();
-                    if (responseListener == null) {
-                        return;
-                    }
-                    Message message = handler.obtainMessage();
-                    message.what = whatStringResponse;
-                    message.arg1 = requestCode;
-                    message.arg2 = response.code();
-                    message.obj = response.body().string();
-                    handler.sendMessage(message);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    if (responseListener == null) {
-                        return;
-                    }
-                    Message message = handler.obtainMessage();
-                    message.what = whatNoResponse;
-                    message.arg1 = requestCode;
-                    message.arg2 = 0;
-                    message.obj = e.getMessage();
-                }
-            }
-        }).start();
-    }
-
-    public void doPost(@NonNull final String url,
-                       @Nullable final DefaultParams params,
-                       final int requestCode) {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                Request request = new Request.Builder()
-                        .url(url)
-                        .post(hashMapToRequestBody(params))
-                        .build();
-                doRequestSync(request, requestCode);
-            }
-        }).start();
-    }
-
     private void doRequestSync(Request request, int requestCode) {
+        Response response = null;
         try {
-            Response response = CLIENT.newCall(request).execute();
+            response = CLIENT.newCall(request).execute();
             if (responseListener == null) {
                 return;
             }
@@ -173,12 +128,117 @@ public class LRequestTool implements Handler.Callback {
             message.what = whatNoResponse;
             message.arg1 = requestCode;
             message.arg2 = 0;
-            message.obj = e.getMessage();
+            message.obj = e.toString();
+            handler.sendMessage(message);
+        } finally {
+            if (response != null && response.body() != null) {
+                response.body().close();
+            }
         }
     }
 
-    private RequestBody hashMapToRequestBody(DefaultParams params) {
+    public void doGet(@NonNull final String url,
+                      @Nullable final HashMap<String, Object> params,
+                      final int requestCode) {
+        doGetWithHeader(url, null, params, requestCode);
+    }
+
+    public void doGetWithHeader(@NonNull final String url,
+                                @Nullable final HashMap<String, String> headers,
+                                @Nullable final HashMap<String, Object> params,
+                                final int requestCode) {
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                Request.Builder requestBuilder = new Request.Builder();
+                requestBuilder.url(url + hashMapToGetParams(params));
+                if (headers != null) {
+                    for (String k : headers.keySet()) {
+                        requestBuilder.addHeader(k, headers.get(k));
+                    }
+                }
+                doRequestSync(requestBuilder.build(), requestCode);
+            }
+        }).start();
+    }
+
+    public void doPost(@NonNull final String url,
+                       @Nullable final HashMap<String, Object> params,
+                       final int requestCode) {
+        doPostWithHeader(url, null, params, requestCode);
+    }
+
+    public void doPostWithHeader(@NonNull final String url,
+                                 @Nullable final HashMap<String, String> headers,
+                                 @Nullable final HashMap<String, Object> params,
+                                 final int requestCode) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                FormBody formBody = hashMapToFormBody(params);
+                Request.Builder requestBuilder = new Request.Builder();
+                requestBuilder.url(url).post(formBody);
+                if (headers != null) {
+                    for (String k : headers.keySet()) {
+                        requestBuilder.addHeader(k, headers.get(k));
+                    }
+                }
+                doRequestSync(requestBuilder.build(), requestCode);
+            }
+        }).start();
+    }
+
+    public void doPostMultipart(@NonNull final String url,
+                                @Nullable final HashMap<String, Object> params,
+                                final int requestCode) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                Request request = new Request.Builder()
+                        .url(url)
+                        .post(hashMapToMultipartBody(params))
+                        .build();
+                doRequestSync(request, requestCode);
+            }
+        }).start();
+    }
+
+    public void doPostJson(@NonNull final String url,
+                           @NonNull final HashMap<String, Object> params,
+                           final int requestCode) {
+        final JSONObject jsonObject = new JSONObject(params);
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                RequestBody requestBody = RequestBody
+                        .create(APPLICATION_JSON, jsonObject.toString());
+                Request request = new Request.Builder()
+                        .url(url)
+                        .post(requestBody)
+                        .build();
+                doRequestSync(request, requestCode);
+            }
+        }).start();
+    }
+
+    private FormBody hashMapToFormBody(HashMap<String, Object> params) {
+        FormBody.Builder builder = new FormBody.Builder();
+        if (params == null) {
+            return builder.build();
+        }
+        for (String k : params.keySet()) {
+            Object v = params.get(k);
+            builder.add(k, v.toString());
+        }
+        return builder.build();
+    }
+
+    private RequestBody hashMapToMultipartBody(HashMap<String, Object> params) {
         MultipartBody.Builder builder = new MultipartBody.Builder();
+        if (params == null) {
+            return builder.build();
+        }
         for (String k : params.keySet()) {
             Object v = params.get(k);
             if (v instanceof File) {
@@ -193,7 +253,7 @@ public class LRequestTool implements Handler.Callback {
         return builder.build();
     }
 
-    private String hashMapToGetParams(DefaultParams params) {
+    private String hashMapToGetParams(HashMap<String, Object> params) {
         if (params == null) {
             return "";
         }

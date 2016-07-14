@@ -23,6 +23,7 @@ public class Lutil {
         preferences = context.
                 getSharedPreferences(context.getPackageName() + "_pref", Activity.MODE_PRIVATE);
         ToastUtil.init(context);
+        ToastUtil.showInCenter();
         PermissionUtil.init(context);
     }
 }

@@ -14,6 +14,8 @@ import java.io.File;
 import java.io.IOException;
 import java.text.DecimalFormat;
 
+import okhttp3.MediaType;
+
 /**
  * Created by 英伦 on 2015/3/17.
  * FileUtil
@@ -25,6 +27,31 @@ import java.text.DecimalFormat;
 @SuppressWarnings("unused")
 public class FileUtil {
     private static File cacheFolder = null;
+
+    public static MediaType getMediaType(String fileName) {
+        String mediaType = "";
+        int extensionIndex = fileName.lastIndexOf(".");
+        if (extensionIndex == -1) {
+            return MediaType.parse("application/octet-stream");
+        }
+        String extension = fileName.substring(extensionIndex + 1);//+1 because "."
+        FileType fileType = getFileType(fileName);
+        switch (fileType) {
+            case music:
+                mediaType += "audio/";
+                break;
+            case video:
+                mediaType += "video/";
+                break;
+            case picture:
+                mediaType += "image/";
+                break;
+            default:
+                return MediaType.parse("application/octet-stream");
+        }
+        mediaType += extension;
+        return MediaType.parse(mediaType);
+    }
 
     public static FileType getFileType(String fileUrl) {
         if (fileUrl == null) {
@@ -191,7 +218,7 @@ public class FileUtil {
     public static String getFormattedFileSize(long size) {
         DecimalFormat format = new DecimalFormat("######.00");
         if (size < 1024) {
-            return size + "b";
+            return size + "B";
         } else if (size < 1024 * 1024) {
             float kb = size / 1024f;
             return format.format(kb) + "KB";
@@ -245,6 +272,8 @@ public class FileUtil {
         }
         return isSuccess;
     }
+
+
 
     public enum FileType {
         music, video, picture, web, unknown

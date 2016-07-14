@@ -1,3 +1,4 @@
 <resources>
     <string name="server_error_">Server error:</string>
+    <string name="server_err_0">Network Error</string>
 </resources>
