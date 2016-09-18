@@ -11,7 +11,6 @@ import java.lang.reflect.Type;
  */
 public class LEntity implements Serializable {
     private static final Gson GSON = new Gson();
-    public int id;
 
     public static <T> T fromJson(String json, Class<T> classOfT) {
         return GSON.fromJson(json, classOfT);

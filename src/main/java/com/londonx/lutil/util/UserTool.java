@@ -39,7 +39,7 @@ public class UserTool {
         Cursor cursor = db.rawQuery(sql, new String[]{});
         ArrayList<SimpleUser> simpleUsers = new ArrayList<>();
         while (cursor.moveToNext()) {
-            simpleUsers.add(new UserTool().new SimpleUser(cursor.getInt(0), cursor.getString(1), cursor.getString(2)));
+            simpleUsers.add(new UserTool().new SimpleUser(cursor.getString(1), cursor.getString(2)));
         }
         cursor.close();
         db.close();
@@ -50,8 +50,7 @@ public class UserTool {
         public String username;
         public String password;
 
-        public SimpleUser(int id, String username, String password) {
-            this.id = id;
+        public SimpleUser(String username, String password) {
             this.username = username;
             this.password = password;
         }

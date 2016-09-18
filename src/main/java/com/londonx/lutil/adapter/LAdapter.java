@@ -34,6 +34,6 @@ public abstract class LAdapter extends BaseAdapter {
 
     @Override
     public long getItemId(int position) {
-        return lEntities.get(position).id;
+        return position;
     }
 }
