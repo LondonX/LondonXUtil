@@ -64,21 +64,21 @@ public class LRequestTool implements Handler.Callback {
     private OnResponseListener responseListener;
     private Handler handler = new Handler(this);
 
-    public static void setMediaType(@NonNull MediaType mediaType) {
-        LRequestTool.selectedMediaType = mediaType;
-    }
-
-    public static void setGlobalResponseListener(@NonNull
-                                                 GlobalResponseListener globalResponseListener) {
-        LRequestTool.globalResponseListener = globalResponseListener;
-    }
-
     public LRequestTool(@Nullable OnResponseListener responseListener) {
         this.responseListener = responseListener;
         if (Looper.myLooper() != Looper.getMainLooper()) {
             throw new IllegalThreadStateException(
                     "LRequestTool can only new in the main thread (UI thread)");
         }
+    }
+
+    public static void setMediaType(@NonNull MediaType mediaType) {
+        LRequestTool.selectedMediaType = mediaType;
+    }
+
+    public static void setGlobalResponseListener(@NonNull
+                                                         GlobalResponseListener globalResponseListener) {
+        LRequestTool.globalResponseListener = globalResponseListener;
     }
 
     @Override
